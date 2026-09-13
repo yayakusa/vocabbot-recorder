@@ -209,6 +209,33 @@ window.addEventListener('message',e=>{
     alert('บันทึกไม่สำเร็จ: '+(d.message||'Unknown error'));
   }
 });
+
+function returnToVocabBot(){
+  // Recorder ถูกเปิดจาก VocabBot ในแท็บ/หน้าต่างใหม่
+  // จึงพยายามกลับไปยังแท็บเดิมแล้วปิด Recorder
+  try{
+    if (window.opener && !window.opener.closed) {
+      try { window.opener.focus(); } catch(e) {}
+    }
+
+    window.close();
+
+    // ถ้า browser ไม่ยอมปิดแท็บ ให้แสดงคำแนะนำแทน
+    setTimeout(() => {
+      const status = document.getElementById('status');
+      if (status) {
+        status.innerHTML =
+          '<span class="good">✅ พร้อมกลับไปเรียนต่อ</span><br>' +
+          'เบราว์เซอร์ไม่อนุญาตให้ปิดแท็บอัตโนมัติ กรุณาปิดแท็บ Speaking Recorder นี้ แล้วกลับไปที่แท็บ VocabBot เดิม';
+      }
+      alert('กรุณาปิดแท็บ Speaking Recorder นี้ เพื่อกลับไปทำแบบฝึกในแท็บ VocabBot เดิม');
+    }, 300);
+
+  }catch(e){
+    alert('กรุณาปิดแท็บ Speaking Recorder นี้ เพื่อกลับไปทำแบบฝึกในแท็บ VocabBot เดิม');
+  }
+}
+
 function esc(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
 init();
 </script>
