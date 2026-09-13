@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    :root{--p:#6D5DFB;--bg:#F7F6FF;--card:#fff;--text:#2D2A3A;--ok:#1B9C5A;--bad:#D64545}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:920px;margin:auto;padding:18px}.hero{background:linear-gradient(135deg,#6D5DFB,#9B8CFF);color:#fff;border-radius:24px;padding:24px;text-align:center}
+    .bot{font-size:68px}.card{background:var(--card);border-radius:20px;padding:20px;margin-top:16px;box-shadow:0 8px 30px rgba(0,0,0,.07)}
+    input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;margin:6px 0;font-size:16px}
+    button{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;font-size:16px}.primary{background:var(--p);color:#fff}.soft{background:#EEEAFE}.wide{width:100%}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.mission{padding:16px;text-align:left;background:#fff;border:1px solid #eee}
+    .mission b{display:block;margin-bottom:5px}.hidden{display:none}.word{font-size:32px;font-weight:700;color:var(--p)}
+    .flash{text-align:center;padding:28px}.flash .emoji{font-size:58px}.option{display:block;border:1px solid #ddd;border-radius:12px;padding:12px;margin:8px 0}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:#F3F0FF;border-radius:14px;padding:10px;text-align:center}
+    .bar{height:12px;background:#eee;border-radius:8px;overflow:hidden}.bar>div{height:100%;background:var(--p)}
+    @media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body><div class="wrap">
+  <div class="hero"><div class="bot">🤖</div><h1>VocabBot Smart Collector</h1><div>Learn • Play • Collect • Review</div></div>
+
+  <div class="card" id="loginCard">
+    <h2>👋 Student Login</h2>
+    <input id="name" placeholder="ชื่อ-สกุล">
+    <input id="className" value="ป.6/1" placeholder="ชั้น">
+    <input id="number" type="number" placeholder="เลขที่">
+    <button class="primary wide" onclick="enterApp()">เข้าสู่ VocabBot</button>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><b id="lv">🌱</b><small>Level</small></div>
+        <div class="stat"><b id="xp">0</b><small>XP</small></div>
+        <div class="stat"><b id="coins">0</b><small>Coins 🪙</small></div>
+        <div class="stat"><b id="done">0/10</b><small>Missions</small></div>
+      </div>
+    </div>
+    <div class="card" id="home">
+      <h2>🎯 Choose Your Mission</h2><div id="missions" class="grid"></div>
+      <br><button class="soft wide" onclick="showReview()">🔁 Review My Words</button>
+      <br><br><button class="soft wide" onclick="startTest('Pre-test')">📝 Pre-test 30 ข้อ</button>
+      <br><br><button class="soft wide" onclick="startTest('Post-test')">🏆 Post-test 30 ข้อ</button>
+      <br><br><button class="soft wide" onclick="showSatisfaction()">😊 แบบประเมินความพึงพอใจ</button>
+    </div>
+
+    <div class="card hidden" id="flashCard">
+      <h2 id="flashTitle"></h2><div id="flashBox"></div>
+      <button class="soft" onclick="prevFlash()">← Previous</button>
+      <button class="primary" onclick="nextFlash()">Next →</button>
+      <button class="primary wide" style="margin-top:12px" onclick="beginQuiz()">🎮 Start Quiz</button>
+    </div>
+
+    <div class="card hidden" id="quizCard"><h2 id="quizTitle"></h2><div id="questions"></div>
+      <button class="primary wide" onclick="submitMissionQuiz()">✅ Submit Answers</button>
+    </div>
+
+    <div class="card hidden" id="resultCard"><div id="resultBox"></div><button class="primary wide" onclick="goHome()">🏠 Back to Missions</button></div>
+    <div class="card hidden" id="reviewCard"><h2>🔁 My Review Box</h2><div id="reviewBox"></div><button class="primary wide" onclick="goHome()">🏠 Back</button></div>
+    <div class="card hidden" id="testCard"><h2 id="testTitle"></h2><div id="testQuestions"></div><button class="primary wide" onclick="submitCurrentTest()">✅ Submit Test</button></div>
+    <div class="card hidden" id="satCard"><h2>😊 ความพึงพอใจต่อ VocabBot</h2><div id="satQuestions"></div><button class="primary wide" onclick="submitSat()">✅ ส่งแบบประเมิน</button></div>
+  </div>
+</div>
+
+<script>
+let student=null, missions=[], words=[], mission=0, flashIndex=0, testType='', testItems=[];
+
+function enterApp(){
+  const name=$('name').value.trim(), className=$('className').value.trim(), no=$('number').value.trim();
+  if(!name||!className||!no)return alert('กรุณากรอกชื่อ ชั้น และเลขที่');
+  student={name,className,no}; $('loginCard').classList.add('hidden'); $('app').classList.remove('hidden');
+  refreshSummary(); google.script.run.withSuccessHandler(renderMissions).getMissions();
+}
+function refreshSummary(){google.script.run.withSuccessHandler(s=>{ $('lv').textContent=s.level;$('xp').textContent=s.xp;$('coins').textContent=s.coins;$('done').textContent=s.completed+'/'+s.totalMissions;}).getStudentSummary(student);}
+function renderMissions(data){missions=data;$('missions').innerHTML=data.map(m=>`<button class="mission" onclick="openMission(${m.mission})"><b>${m.emoji} Mission ${m.mission}</b>${m.name}<br><small>${m.count} words</small></button>`).join('');}
+function openMission(n){mission=n; google.script.run.withSuccessHandler(data=>{words=data;flashIndex=0;hideAll();$('flashCard').classList.remove('hidden');$('flashTitle').textContent=`${data[0].emoji} Mission ${n}: ${data[0].missionName}`;renderFlash();}).getMissionWords(n);}
+function renderFlash(){const w=words[flashIndex];$('flashBox').innerHTML=`<div class="flash"><div class="emoji">${w.emoji}</div><div>${flashIndex+1}/${words.length}</div><div class="word">${w.word}</div><h2>${w.thai}</h2><p>${w.example}</p><button class="soft" onclick="speak('${esc(w.word)}')">🔊 Listen</button></div>`;}
+function prevFlash(){if(flashIndex>0){flashIndex--;renderFlash();}}
+function nextFlash(){if(flashIndex<words.length-1){flashIndex++;renderFlash();}}
+function speak(t){if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(t);u.lang='en-US';speechSynthesis.speak(u);}}
+function beginQuiz(){hideAll();$('quizCard').classList.remove('hidden');$('quizTitle').textContent=`🎮 Mission ${mission} Quiz`;const th=words.map(w=>w.thai);$('questions').innerHTML=words.map((w,i)=>{let opts=shuffle([w.thai,...shuffle(th.filter(x=>x!==w.thai)).slice(0,3)]);return `<div><h3>${i+1}. ${w.word}</h3><small>${w.example}</small>${opts.map(o=>`<label class="option"><input type="radio" name="q${i}" value="${attr(o)}"> ${o}</label>`).join('')}</div>`}).join('');}
+function submitMissionQuiz(){const answers=words.map((w,i)=>({wordId:w.id,selected:(document.querySelector(`input[name=q${i}]:checked`)||{}).value||''}));google.script.run.withSuccessHandler(r=>{hideAll();$('resultCard').classList.remove('hidden');$('resultBox').innerHTML=`<h2>🎉 Mission Result</h2><h1>${r.correct}/${r.total} (${r.percent}%)</h1><p>⭐ XP +${r.xp} &nbsp; 🪙 Coins +${r.coins}</p><h3>${r.badge}</h3>${r.wrongWords.length?'<h3>🔁 Words to Review</h3>'+r.wrongWords.map(w=>`<p>❌ <b>${w.word}</b> = ${w.thai}</p>`).join(''):'<p>🎉 Perfect! No words to review.</p>'}`;refreshSummary();}).saveQuiz({student,mission,answers});}
+function showReview(){google.script.run.withSuccessHandler(data=>{hideAll();$('reviewCard').classList.remove('hidden');$('reviewBox').innerHTML=data.length?data.map(w=>`<div class="option"><b>${w.word}</b> = ${w.thai}<br><small>${w.example}</small><br><button class="soft" onclick="speak('${esc(w.word)}')">🔊</button></div>`).join(''):'<h3>🎉 No words need review.</h3>';}).getReviewWords(student);}
+function startTest(type){testType=type;google.script.run.withSuccessHandler(data=>{testItems=data;hideAll();$('testCard').classList.remove('hidden');$('testTitle').textContent=type+' • 30 Questions';$('testQuestions').innerHTML=data.map((q,i)=>`<div><h3>${i+1}. ${q.question}</h3>${q.options.map(o=>`<label class="option"><input type="radio" name="t${i}" value="${attr(o)}"> ${o}</label>`).join('')}</div>`).join('');}).getTestItems();}
+function submitCurrentTest(){const answers=testItems.map((q,i)=>({itemId:q.id,selected:(document.querySelector(`input[name=t${i}]:checked`)||{}).value||''}));google.script.run.withSuccessHandler(r=>{hideAll();$('resultCard').classList.remove('hidden');$('resultBox').innerHTML=`<h2>${testType}</h2><h1>${r.correct}/${r.total}</h1><h2>${r.percent}%</h2>`;}).submitTest({student,testType,answers});}
+function showSatisfaction(){hideAll();$('satCard').classList.remove('hidden');const qs=['ฉันสนุกกับการเรียนคำศัพท์ด้วย VocabBot','ภาพ/กิจกรรมช่วยให้ฉันจำคำศัพท์ได้ดีขึ้น','ฉันชอบการสะสม Coins และ Badges','ฉันสามารถนำคำศัพท์ไปใช้ตอบคำถามได้','ฉันอยากใช้ VocabBot ฝึกภาษาอังกฤษอีก'];$('satQuestions').innerHTML=qs.map((q,i)=>`<div><p><b>${i+1}. ${q}</b></p><select id="s${i}"><option value="5">5 มากที่สุด</option><option value="4">4 มาก</option><option value="3">3 ปานกลาง</option><option value="2">2 น้อย</option><option value="1">1 น้อยที่สุด</option></select></div>`).join('');}
+function submitSat(){const scores=[0,1,2,3,4].map(i=>Number($('s'+i).value));google.script.run.withSuccessHandler(r=>{hideAll();$('resultCard').classList.remove('hidden');$('resultBox').innerHTML=`<h2>ขอบคุณค่ะ/ครับ 😊</h2><p>คะแนนเฉลี่ยความพึงพอใจ: <b>${r.average}/5</b></p>`;}).saveSatisfaction({student,scores});}
+function hideAll(){['home','flashCard','quizCard','resultCard','reviewCard','testCard','satCard'].forEach(id=>$(id).classList.add('hidden'));}
+function goHome(){hideAll();$('home').classList.remove('hidden');refreshSummary();}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)} function $(id){return document.getElementById(id)}
+function attr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function esc(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+</script></body></html>
