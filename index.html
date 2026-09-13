@@ -25,6 +25,7 @@ audio{width:100%;margin-top:10px}.hidden{display:none}.student{opacity:.9;font-s
     <div style="font-size:54px">🎙️</div>
     <h1>VocabBot Speaking Recorder</h1>
     <div id="studentInfo" class="student"></div>
+    <button class="soft" style="margin-top:14px" onclick="returnToVocabBot()">← กลับไปทำแบบฝึกใน VocabBot</button>
   </div>
 
   <div id="errorCard" class="card hidden">
@@ -64,6 +65,7 @@ audio{width:100%;margin-top:10px}.hidden{display:none}.student{opacity:.9;font-s
       <button class="soft" onclick="nextWord()">Next →</button>
     </div>
     <button class="soft wide" style="margin-top:10px" onclick="backToMissions()">← Mission Menu</button>
+    <button class="primary wide" style="margin-top:10px" onclick="returnToVocabBot()">← กลับไปทำแบบฝึกใน VocabBot</button>
 
     <div class="notice" style="margin-top:14px">
       อัดได้สูงสุดประมาณ 10 วินาทีต่อคำ • ฟังเสียงตัวเองก่อน Save ได้ •
@@ -201,7 +203,7 @@ window.addEventListener('message',e=>{
   if(d.ok){
     btn.textContent='✅ Saved';
     document.getElementById('status').innerHTML=`<span class="good">✅ บันทึก ${d.word||''} เรียบร้อย</span>`;
-    setTimeout(()=>{if(index<4){index++;render()}else{alert('บันทึกครบ 5 คำแล้ว 🎉');backToMissions()}},650);
+    setTimeout(()=>{if(index<4){index++;render()}else{alert('บันทึกครบ 5 คำแล้ว 🎉 กด “กลับไปทำแบบฝึกใน VocabBot” เพื่อเรียนต่อ');backToMissions()}},650);
   }else{
     btn.textContent='💾 Save to VocabBot';
     alert('บันทึกไม่สำเร็จ: '+(d.message||'Unknown error'));
